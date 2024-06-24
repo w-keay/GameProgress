@@ -2,76 +2,58 @@ package tech.makers.demo.levelManagement;
 
 import javafx.scene.canvas.GraphicsContext;
 import tech.makers.demo.EscapeRoomGame;
-import tech.makers.demo.assets.Door;
-import tech.makers.demo.assets.Eddie;
 import tech.makers.demo.levelManagement.levels.Level1;
-import tech.makers.demo.levelManagement.levels.Level2;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class LevelManager {
-    public Level[] levels;
-    private int currentLevelIndex;
-    private final GraphicsContext gc;
-    private final EscapeRoomGame game;
+    private GraphicsContext gc;
+    private EscapeRoomGame game;
+    private Level currentLevel;
+    private int currentLevelNumber;
 
     public LevelManager(GraphicsContext gc, EscapeRoomGame game) {
         this.gc = gc;
         this.game = game;
-        this.currentLevelIndex = 0;
-        initializeLevels();
+        this.currentLevelNumber = 1;
+        loadLevel(currentLevelNumber);
     }
 
-    protected void initializeLevels() {
-        levels = new Level[] {
-                new Level1(),
-                new Level2()
-        };
+    public void loadLevel(int levelNumber) {
+        switch (levelNumber) {
+            case 1:
+                currentLevel = new Level1();
+                break;
+            case 2:
+                break;
+            // Add more cases for additional levels
+        }
+        currentLevelNumber = levelNumber;
     }
 
     public Level getCurrentLevel() {
-        return levels[currentLevelIndex];
-    }
-
-    public int getCurrentLevelNumber() {
-        return currentLevelIndex + 1; // Assuming level numbers start from 1
-    }
-
-    public void loadNextLevel() {
-        if (currentLevelIndex < levels.length - 1) {
-            currentLevelIndex++;
-            game.setupNextLevel(); // Ensure the game setup for the next level
-        } else {
-            // Handle the end of the game
-            System.out.println("You have completed all levels!");
-        }
+        return currentLevel;
     }
 
     public void render() {
-        getCurrentLevel().render(gc);
+        currentLevel.render(gc);
     }
 
     public void update() {
-        Level currentLevel = getCurrentLevel();
         currentLevel.update();
-        if (currentLevel.isCompleted()) {
-//            game.completeLevel();
+    }
 
-            Door.unlock();
-        }
+    public void loadNextLevel() {
+        loadLevel(currentLevelNumber + 1);
+    }
+
+    public int getCurrentLevelNumber() {
+        return currentLevelNumber;
     }
 
     public void completeLevel() {
-        game.completeLevel();
     }
 
-    public void setLevels(Level[] levels) {
-        this.levels = levels;
-    }
 
-    public Eddie getHelperCharacter() {
-        return getCurrentLevel().getHelperCharacter();
+    public void getHelperCharacter() {
+        ;
     }
 }

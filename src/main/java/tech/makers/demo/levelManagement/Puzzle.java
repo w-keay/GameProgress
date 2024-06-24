@@ -128,4 +128,15 @@ public class Puzzle {
     public List<String> getOptions() {
         return options; // Return the multiple-choice options
     }
+
+    // New methods
+    public String getSpritePath() {
+        return image.getUrl();
+    }
+
+    public String askQuestion() {
+        // Simulate asking a question and returning the answer
+        System.out.println(question);
+        return answer;
+    }
 }

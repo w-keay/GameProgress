@@ -9,7 +9,6 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import tech.makers.demo.assets.Door;
 import tech.makers.demo.assets.Sound;
 import tech.makers.demo.gui.HomeScreen;
 import tech.makers.demo.gui.LevelCompletionScreen;
@@ -19,19 +18,13 @@ import tech.makers.demo.levelManagement.LevelManager;
 import tech.makers.demo.levelManagement.Puzzle;
 import tech.makers.demo.player.Player;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import tech.makers.demo.assets.Eddie;
-
 
 public class EscapeRoomGame extends Application {
     private LevelManager levelManager;
     private TileManager tileManager;
     private Image[] moneyImages;
-    private List<ImagePosition> objectPositions;
     private Sound sound = new Sound();
-    private Random random = new Random();
     private Stage primaryStage;
     private AnimationTimer gameLoop;
     private Canvas canvas;
@@ -88,27 +81,12 @@ public class EscapeRoomGame extends Application {
             Level currentLevel = levelManager.getCurrentLevel();
             Player player = currentLevel.getPlayer();
             List<Puzzle> puzzles = currentLevel.getPuzzles();
-            Door door = currentLevel.getDoor();
-            Eddie helperCharacter = levelManager.getHelperCharacter();
-
-            if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.W) player.moveUp(puzzles, door);
-            if (event.getCode() == KeyCode.DOWN || event.getCode() == KeyCode.S) player.moveDown(puzzles, door);
-            if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.A) player.moveLeft(puzzles, door);
-            if (event.getCode() == KeyCode.RIGHT || event.getCode() == KeyCode.D) player.moveRight(puzzles, door);
+            if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.W) player.moveUp(puzzles, currentLevel.getDoor());
+            if (event.getCode() == KeyCode.DOWN || event.getCode() == KeyCode.S) player.moveDown(puzzles, currentLevel.getDoor());
+            if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.A) player.moveLeft(puzzles, currentLevel.getDoor());
+            if (event.getCode() == KeyCode.RIGHT || event.getCode() == KeyCode.D) player.moveRight(puzzles, currentLevel.getDoor());
             if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.E) {
-                if (door.isInRange() && !door.isLocked()) {
-                    door.interact(levelManager);
-                    currentLevel.isCompleted();
-                } else {
-                    for (Puzzle puzzle: puzzles){
-                        puzzle.interact();
-                    }
-
-                    door.interact(levelManager);
-                }
-                if (helperCharacter.isInRange(player.getX(), player.getY())) {
-                    helperCharacter.interact();
-                }
+                currentLevel.handleInteraction();
             }
         });
 
@@ -134,63 +112,9 @@ public class EscapeRoomGame extends Application {
                 tileManager.renderTiles(gc);
                 levelManager.render();
                 levelManager.update();
-                renderObjects(gc);
             }
         };
         gameLoop.start();
-    }
-
-    private List<ImagePosition> initializeObjectPositions(Canvas canvas, int levelNumber) {
-        double canvasWidth = canvas.getWidth();
-        double canvasHeight = canvas.getHeight();
-        double tileSize = 48;
-        List<ImagePosition> positions = new ArrayList<>();
-
-        if (levelNumber == 1) {
-            // Top and bottom edges
-            for (int i = 0; i < canvasWidth; i += tileSize) {
-                // Top edge
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], i, 0));
-                // Bottom edge
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], i, canvasHeight - tileSize));
-            }
-
-            // Left and right edges
-            for (int i = 0; i < canvasHeight; i += tileSize) {
-                // Left edge
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], 0, i));
-                // Right edge
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], canvasWidth - tileSize, i));
-            }
-        } else if (levelNumber == 2) {
-            // Top row (ChairDown)
-            for (int i = 0; i < canvasWidth; i += tileSize) {
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], i, 0));
-            }
-
-            // Bottom row (ChairUp)
-            for (int i = 0; i < canvasWidth; i += tileSize) {
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], i, canvasHeight - tileSize));
-            }
-
-            // Left column (ChairRight)
-            for (int i = 0; i < canvasHeight; i += tileSize) {
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], 0, i));
-            }
-
-            // Right column (ChairLeft)
-            for (int i = 0; i < canvasHeight; i += tileSize) {
-                positions.add(new ImagePosition(moneyImages[random.nextInt(moneyImages.length)], canvasWidth - tileSize, i));
-            }
-        }
-
-        return positions;
-    }
-
-    private void renderObjects(GraphicsContext gc) {
-        for (ImagePosition position : objectPositions) {
-            gc.drawImage(position.image, position.x, position.y, 48, 48);
-        }
     }
 
     public void playMusic(int i) {
@@ -227,27 +151,7 @@ public class EscapeRoomGame extends Application {
     }
 
     public void loadLevel(int levelNumber) {
-        switch (levelNumber) {
-            case 1:
-                tileManager = new TileManager("/tiles/StoneTile.png");
-                objectPositions = initializeObjectPositions(canvas, 1);
-                break;
-            case 2:
-                tileManager = new TileManager("/tiles/RedTile.png");
-                objectPositions = initializeObjectPositions(canvas, 2);
-                break;
-            // Add more cases for additional levels
-        }
-    }
-
-    public void setupNextLevel() {
-        Level currentLevel = levelManager.getCurrentLevel();
-        Player player = currentLevel.getPlayer();
-        List<Puzzle> puzzle = currentLevel.getPuzzles();
-        Door door = currentLevel.getDoor();
-
-        objectPositions = initializeObjectPositions(canvas, levelManager.getCurrentLevelNumber());
-
+        tileManager = new TileManager("/tiles/StoneTile.png");
         StackPane root = new StackPane();
         root.getChildren().add(canvas);
 
@@ -258,15 +162,17 @@ public class EscapeRoomGame extends Application {
         primaryStage.show();
     }
 
-    private static class ImagePosition {
-        Image image;
-        double x;
-        double y;
+    public void setupNextLevel() {
+        Level currentLevel = levelManager.getCurrentLevel();
+        Player player = currentLevel.getPlayer();
 
-        ImagePosition(Image image, double x, double y) {
-            this.image = image;
-            this.x = x;
-            this.y = y;
-        }
+        StackPane root = new StackPane();
+        root.getChildren().add(canvas);
+
+        Scene scene = new Scene(root);
+        setSceneControls(scene);
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 }
